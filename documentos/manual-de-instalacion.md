@@ -232,8 +232,6 @@ docker network create wordpress-net
 ## Paso 5 Ejecutar un contenedor para la base de datos
 
 Primero, necesitamos un contenedor para la base de datos que almacenará la información de WordPress.
-
-#### MariaDB:
 ~~~bash
 docker run -d \
 --name wordpress-db \
@@ -271,3 +269,71 @@ docker run -d \
 wordpress:latest
 ~~~
 <!--docker run -d --name wordpress-app -e WORDPRESS_DB_HOST=wordpress-db:3306 -e WORDPRESS_DB_USER=wordpress_user -e WORDPRESS_DB_PASSWORD=peque -e WORDPRESS_DB_NAME=wordpress -p 8080:80 -v wordpress-data:/var/www/html --network wordpress-net wordpress:latest-->
+
+Con esto ejecutado solo tienes que acceder a la ip de tu maquina con el puerto 8080 y te aparecerá el instalador de WordPress.
+
+# Instalación de WordPress con Docker compose
+
+## Paso 1 Dependencias
+
+Antes de empezar, asegúrate de que tu sistema cumple con los siguientes requisitos:
+
+Docker instalado:
+~~~bash
+apt update
+apt install -y docker.io
+~~~
+Docker Compose instalado:
+~~~bash
+apt install -y docker-compose
+~~~
+## Paso 2 Configuración del archivo docker-compose.yml
+
+Crea un directorio para tu proyecto de WordPress:
+~~~bash
+mkdir wordpress-project && cd wordpress-project
+~~~
+Dentro de este directorio, crea un archivo docker-compose.yml con el siguiente contenido:
+~~~yml
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress-app
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: wordpress-db:3306
+      WORDPRESS_DB_USER: wordpress_user
+      WORDPRESS_DB_PASSWORD: password123
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wordpress-data:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:latest
+    container_name: wordpress-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress_user
+      MYSQL_PASSWORD: password123
+    volumes:
+      - db-data:/var/lib/mysql
+
+volumes:
+  wordpress-data:
+  db-data:
+~~~
+## Paso 3 Inicia los servicios
+
+Ejecuta el siguiente comando para iniciar WordPress y MariaDB:
+
+docker-compose up -d
+
+Esto descargará las imágenes necesarias (si no están en tu máquina), creará los contenedores y los iniciará.
+
+Una vez termine el proceso, podrás acceder a la pagina de instalación por el navegador.
