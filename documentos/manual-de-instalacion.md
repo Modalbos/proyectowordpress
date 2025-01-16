@@ -6,7 +6,7 @@ Wordpress puede ser instalado de varias maneras, desde manualmente hasta con doc
 
 # Instalación por Manual de Wordpress
 
-La instalacion manual de wordpress tiende a ser la mas complicada pero sigue en si siendo un proceso sencillo:
+La instalación manual de wordpress tiende a ser la mas complicada pero sigue en si siendo un proceso sencillo:
 
 ## Paso 1: Preparación del Servidor
 
@@ -110,7 +110,7 @@ a2enmod rewrite
 systemctl reload apache2
 ~~~
 
-<<porque reescritura>>
+El módulo rewrite de Apache se necesita para habilitar URLs amigables en WordPress. Permite redirigir y reescribir solicitudes, lo cual es crucial para que los enlaces permanentes de WordPress funcionen correctamente.
 
 ## Paso 5 configuración del Wordpress
 
@@ -159,10 +159,181 @@ chown -R www-data:www-data /var/www/html/wordpress/wp-content
 Abre tu navegador y accede a: http://IP_DEL_SERVIDOR
 Deberías de encontrar una  pagina como esta:
 
-![imagen pagina]()
+
+![alt text](../imagenes/inicio-wp.png)
 
 Completa el asistente de instalación proporcionando:
 * Nombre del sitio.
 * Usuario y contraseña del administrador.
 * Correo electrónico.
 * Una vez finalizado, accede al panel de administración en http://tu-dominio.com/wp-admin.
+
+![alt text](../imagenes/panel-admin-wp.png)
+
+---
+
+## Instalación por Docker Run
+
+## Paso 1: Preparación del Servidor
+
+Este paso es común entre todas las formas de instalar wordpress, en este caso trabajaremos con una maquina Debian 12 con las siguientes especificaciones:
+
+### Características de la maquina:
+
+* 4G de ram
+* 4 procesadores (2 sockets y 2 cores)
+* 50G de almacenamiento
+* SO Debian 12
+
+## Paso 2 Instalación de dependencias
+
+Ne este caso necesitaremos tener instalado docker.
+
+~~~ bash
+apt update && apt upgrade -y
+apt install apt-transport-https ca-certificates curl software-properties-common gnupg lsb-release -y
+~~~
+
+## Paso 3 Instalar Docker
+
+### Agregar la clave GPG oficial de Docker
+~~~bash
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+~~~
+### Agregar el repositorio de Docker
+~~~bash
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+~~~
+### Actualizar e instalar Docker
+~~~bash
+apt update
+apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+
+### Lo habilitamos
+systemctl enable docker
+systemctl start docker
+~~~
+
+### Verifica que Docker se haya instalado correctamente:
+~~~bash 
+docker --version
+docker compose version
+~~~
+#### Prueba ejecutando un contenedor de prueba:
+~~~bash
+docker run hello-world
+~~~
+## Paso 6 Red Docker
+La necesitamos para que los contenedores que creemos se comuniquen
+~~~bash
+docker network create wordpress-net
+~~~
+## Paso 5 Ejecutar un contenedor para la base de datos
+
+Primero, necesitamos un contenedor para la base de datos que almacenará la información de WordPress.
+~~~bash
+docker run -d \
+--name wordpress-db \
+-e MYSQL_ROOT_PASSWORD=peque \
+-e MYSQL_DATABASE=wordpress \
+-e MYSQL_USER=wordpress_user \
+-e MYSQL_PASSWORD=peque \
+-v wordpress-db-data:/var/lib/mysql \
+--network wordpress-net \
+mariadb:10.5
+~~~ 
+
+<!--\docker run -d --name wordpress-db -e MYSQL_ROOT_PASSWORD=peque -e MYSQL_DATABASE=wordpress -e MYSQL_USER=wordpress_user -e MYSQL_PASSWORD=peque -v wordpress-db-data:/var/lib/mysql --network wordpress-net mariadb:10.5-->
+
+Explicación:
+
+* MYSQL_ROOT_PASSWORD: Contraseña para el usuario root de MariaDB.
+* MYSQL_DATABASE: Base de datos que WordPress usará.
+* MYSQL_USER y MYSQL_PASSWORD: Usuario y contraseña para WordPress.
+* -v wordpress-db-data:/var/lib/mysql: Volumen persistente para los datos de la base de datos.
+* --network wordpress-net: Una red personalizada para que los contenedores se comuniquen.
+
+# Paso 6 Crear Contenedor para wordpress
+
+~~~bash
+docker run -d \
+--name wordpress-app \
+-e WORDPRESS_DB_HOST=wordpress-db:3306 \
+-e WORDPRESS_DB_USER=wordpress_user \
+-e WORDPRESS_DB_PASSWORD=peque \
+-e WORDPRESS_DB_NAME=wordpress \
+-p 8080:80 \
+-v wordpress-data:/var/www/html \
+--network wordpress-net \
+wordpress:latest
+~~~
+<!--docker run -d --name wordpress-app -e WORDPRESS_DB_HOST=wordpress-db:3306 -e WORDPRESS_DB_USER=wordpress_user -e WORDPRESS_DB_PASSWORD=peque -e WORDPRESS_DB_NAME=wordpress -p 8080:80 -v wordpress-data:/var/www/html --network wordpress-net wordpress:latest-->
+
+Con esto ejecutado solo tienes que acceder a la ip de tu maquina con el puerto 8080 y te aparecerá el instalador de WordPress.
+
+# Instalación de WordPress con Docker compose
+
+## Paso 1 Dependencias
+
+Antes de empezar, asegúrate de que tu sistema cumple con los siguientes requisitos:
+
+Docker instalado:
+~~~bash
+apt update
+apt install -y docker.io
+~~~
+Docker Compose instalado:
+~~~bash
+apt install -y docker-compose
+~~~
+## Paso 2 Configuración del archivo docker-compose.yml
+
+Crea un directorio para tu proyecto de WordPress:
+~~~bash
+mkdir wordpress-project && cd wordpress-project
+~~~
+Dentro de este directorio, crea un archivo docker-compose.yml con el siguiente contenido:
+~~~yml
+version: '3.8'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress-app
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: wordpress-db:3306
+      WORDPRESS_DB_USER: wordpress_user
+      WORDPRESS_DB_PASSWORD: password123
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wordpress-data:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:latest
+    container_name: wordpress-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress_user
+      MYSQL_PASSWORD: password123
+    volumes:
+      - db-data:/var/lib/mysql
+
+volumes:
+  wordpress-data:
+  db-data:
+~~~
+## Paso 3 Inicia los servicios
+
+Ejecuta el siguiente comando para iniciar WordPress y MariaDB:
+
+docker-compose up -d
+
+Esto descargará las imágenes necesarias (si no están en tu máquina), creará los contenedores y los iniciará.
+
+Una vez termine el proceso, podrás acceder a la pagina de instalación por el navegador.
