@@ -169,3 +169,4 @@ Completa el asistente de instalación proporcionando:
 * Una vez finalizado, accede al panel de administración en http://tu-dominio.com/wp-admin.
 
 ![alt text](../imagenes/panel-admin-wp.png)
+
