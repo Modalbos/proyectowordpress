@@ -17,9 +17,9 @@
 
 **WordPress** fue lanzado el **27 de mayo de 2003** por:
 - 🧑‍💻 **Matt Mullenweg**. 
- ![matt](/proyectowordpress/imagenes/Matt_Mullenweg.jpg)
+ ![matt](/imagenes/Matt_Mullenweg.jpg)
 - 🧑‍💻 **Mike Little**.  
- ![matt](/proyectowordpress/imagenes/mike-2016-bw-2000.jpg)
+ ![matt](/imagenes/mike-2016-bw-2000.jpg)
 
 Su origen se encuentra en el software de código abierto llamado **B2/cafelog**, creado por el programador francés **Michel Valdrighi**. Este software estaba diseñado para gestionar **blogs** mediante bases de datos **MySQL**.
 
