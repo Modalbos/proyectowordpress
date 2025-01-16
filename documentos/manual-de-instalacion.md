@@ -159,10 +159,13 @@ chown -R www-data:www-data /var/www/html/wordpress/wp-content
 Abre tu navegador y accede a: http://IP_DEL_SERVIDOR
 Deberías de encontrar una  pagina como esta:
 
-![imagen pagina]()
+
+![alt text](../imagenes/inicio-wp.png)
 
 Completa el asistente de instalación proporcionando:
 * Nombre del sitio.
 * Usuario y contraseña del administrador.
 * Correo electrónico.
 * Una vez finalizado, accede al panel de administración en http://tu-dominio.com/wp-admin.
+
+![alt text](../imagenes/panel-admin-wp.png)
