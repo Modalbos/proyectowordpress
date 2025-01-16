@@ -110,7 +110,7 @@ a2enmod rewrite
 systemctl reload apache2
 ~~~
 
-<<porque reescritura>>
+El módulo rewrite de Apache se necesita para habilitar URLs amigables en WordPress. Permite redirigir y reescribir solicitudes, lo cual es crucial para que los enlaces permanentes de WordPress funcionen correctamente.
 
 ## Paso 5 configuración del Wordpress
 
@@ -170,3 +170,42 @@ Completa el asistente de instalación proporcionando:
 
 ![alt text](../imagenes/panel-admin-wp.png)
 
+---
+
+## Instalación por Docker Run
+
+## Paso 1: Preparación del Servidor
+
+Este paso es común entre todas las formas de instalar wordpress, en este caso trabajaremos con una maquina Debian 12 con las siguientes especificaciones:
+
+### Características de la maquina:
+
+* 4G de ram
+* 4 procesadores (2 sockets y 2 cores)
+* 50G de almacenamiento
+* SO Debian 12
+
+## Paso 2 Instalación de dependencias
+
+Ne este caso necesitaremos tener instalado docker.
+
+~~~ bash
+apt update && apt upgrade -y
+apt install apt-transport-https ca-certificates curl software-properties-common gnupg lsb-release -y
+~~~
+
+## Paso 3 Instalar Docker
+### Agregar la clave GPG oficial de Docker
+~~~bash
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+~~~
+### Agregar el repositorio de Docker
+~~~bash
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > dev/null
+~~~
+### Actualizar e instalar Docker
+~~~bash
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+~~~
