@@ -6,7 +6,7 @@ Wordpress puede ser instalado de varias maneras, desde manualmente hasta con doc
 
 # Instalación por Manual de Wordpress
 
-La instalacion manual de wordpress tiende a ser la mas complicada pero sigue en si siendo un proceso sencillo:
+La instalación manual de wordpress tiende a ser la mas complicada pero sigue en si siendo un proceso sencillo:
 
 ## Paso 1: Preparación del Servidor
 
@@ -195,17 +195,79 @@ apt install apt-transport-https ca-certificates curl software-properties-common 
 ~~~
 
 ## Paso 3 Instalar Docker
+
 ### Agregar la clave GPG oficial de Docker
 ~~~bash
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 ~~~
 ### Agregar el repositorio de Docker
 ~~~bash
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 ~~~
 ### Actualizar e instalar Docker
 ~~~bash
-sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+apt update
+apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+
+### Lo habilitamos
+systemctl enable docker
+systemctl start docker
 ~~~
+
+### Verifica que Docker se haya instalado correctamente:
+~~~bash 
+docker --version
+docker compose version
+~~~
+#### Prueba ejecutando un contenedor de prueba:
+~~~bash
+docker run hello-world
+~~~
+## Paso 6 Red Docker
+La necesitamos para que los contenedores que creemos se comuniquen
+~~~bash
+docker network create wordpress-net
+~~~
+## Paso 5 Ejecutar un contenedor para la base de datos
+
+Primero, necesitamos un contenedor para la base de datos que almacenará la información de WordPress.
+
+#### MariaDB:
+~~~bash
+docker run -d \
+--name wordpress-db \
+-e MYSQL_ROOT_PASSWORD=peque \
+-e MYSQL_DATABASE=wordpress \
+-e MYSQL_USER=wordpress_user \
+-e MYSQL_PASSWORD=peque \
+-v wordpress-db-data:/var/lib/mysql \
+--network wordpress-net \
+mariadb:10.5
+~~~ 
+
+<!--\docker run -d --name wordpress-db -e MYSQL_ROOT_PASSWORD=peque -e MYSQL_DATABASE=wordpress -e MYSQL_USER=wordpress_user -e MYSQL_PASSWORD=peque -v wordpress-db-data:/var/lib/mysql --network wordpress-net mariadb:10.5-->
+
+Explicación:
+
+* MYSQL_ROOT_PASSWORD: Contraseña para el usuario root de MariaDB.
+* MYSQL_DATABASE: Base de datos que WordPress usará.
+* MYSQL_USER y MYSQL_PASSWORD: Usuario y contraseña para WordPress.
+* -v wordpress-db-data:/var/lib/mysql: Volumen persistente para los datos de la base de datos.
+* --network wordpress-net: Una red personalizada para que los contenedores se comuniquen.
+
+# Paso 6 Crear Contenedor para wordpress
+
+~~~bash
+docker run -d \
+--name wordpress-app \
+-e WORDPRESS_DB_HOST=wordpress-db:3306 \
+-e WORDPRESS_DB_USER=wordpress_user \
+-e WORDPRESS_DB_PASSWORD=peque \
+-e WORDPRESS_DB_NAME=wordpress \
+-p 8080:80 \
+-v wordpress-data:/var/www/html \
+--network wordpress-net \
+wordpress:latest
+~~~
+<!--docker run -d --name wordpress-app -e WORDPRESS_DB_HOST=wordpress-db:3306 -e WORDPRESS_DB_USER=wordpress_user -e WORDPRESS_DB_PASSWORD=peque -e WORDPRESS_DB_NAME=wordpress -p 8080:80 -v wordpress-data:/var/www/html --network wordpress-net wordpress:latest-->
